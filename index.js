@@ -22,7 +22,7 @@ app.use(cors({
 app.use(express.json());
 app.use(injectSocket);
 app.use(requireAuth);
-app.use("/", indexRoutes);
+app.use("/api", indexRoutes);
 
 httpServer.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
