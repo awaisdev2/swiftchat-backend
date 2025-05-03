@@ -1,7 +1,7 @@
 import supabase from "../config/supabase.js";
 
 export const createMessage = async ({ content, senderId, channelId }) => {
-  return supabase
+  const { data } = await supabase
     .from("messages")
     .insert({
       content,
@@ -10,6 +10,23 @@ export const createMessage = async ({ content, senderId, channelId }) => {
     })
     .select()
     .single();
+
+  const { data: sender, error: senderError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("clerk_id", senderId)
+    .single();
+
+  if (senderError) return errorResponse(res, senderError.message);
+
+  const enrichedMessage = {
+    ...data,
+    users: {
+      ...sender
+    }
+  };
+
+  return enrichedMessage;
 };
 
 export const getMessagesByChannel = async ({ channelId }) => {

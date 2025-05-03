@@ -8,17 +8,16 @@ export const createMessage = async (req, res) => {
     const { channelId } = req.params;
     const senderId = req.auth.userId;
 
-    const { data, error } = await messageService.createMessage({
+    const messageResult = await messageService.createMessage({
       content,
       senderId,
       channelId,
     });
-    if (error) return errorResponse(res, error.message);
 
     // Broadcast the message to the channel (via socket.io)
-    req.io.to(channelId).emit("receive-message", data);
+    req.io.to(channelId).emit("receive-message", messageResult);
 
-    return successResponse(res, data, "Message sent successfully");
+    return successResponse(res, messageResult, "Message sent successfully");
   } catch (err) {
     return errorResponse(res, err.message);
   }
