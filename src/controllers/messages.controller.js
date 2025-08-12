@@ -1,15 +1,15 @@
-import supabase from "../config/supabase.js";
 import * as messageService from "../services/messages.service.js";
 import { successResponse, errorResponse } from "../utils/helper.js";
 
 export const createMessage = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, attachments } = req.body;
     const { channelId } = req.params;
     const senderId = req.auth.userId;
 
     const messageResult = await messageService.createMessage({
       content,
+      attachments,
       senderId,
       channelId,
     });
@@ -18,6 +18,24 @@ export const createMessage = async (req, res) => {
     req.io.to(channelId).emit("receive-message", messageResult);
 
     return successResponse(res, messageResult, "Message sent successfully");
+  } catch (err) {
+    return errorResponse(res, err.message);
+  }
+};
+
+export const updateMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { content, attachments } = req.body;
+    const { data, error } = await messageService.updateMessage({
+      messageId,
+      content,
+      attachments,
+      userId: req.auth.userId,
+    });
+    if (error) return errorResponse(res, error.message);
+
+    return successResponse(res, data, "Message updated successfully");
   } catch (err) {
     return errorResponse(res, err.message);
   }

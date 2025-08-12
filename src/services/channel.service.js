@@ -44,6 +44,10 @@ export const getChannelById = async ({ channelId }) => {
   return supabase.from("channels").select("*").eq("id", channelId);
 };
 
+export const updateChannel = async ({ channelId, payload }) => {
+  return supabase.from("channels").update(payload).eq("id", channelId);
+};
+
 export const deleteChannel = async ({ channelId }) => {
   return supabase.from("channels").delete().eq("id", channelId);
 };

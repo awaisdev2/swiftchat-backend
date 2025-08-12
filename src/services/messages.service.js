@@ -1,10 +1,16 @@
 import supabase from "../config/supabase.js";
 
-export const createMessage = async ({ content, senderId, channelId }) => {
+export const createMessage = async ({
+  content,
+  attachments,
+  senderId,
+  channelId,
+}) => {
   const { data } = await supabase
     .from("messages")
     .insert({
       content,
+      attachments,
       created_by: senderId,
       channel_id: channelId,
     })
@@ -22,8 +28,39 @@ export const createMessage = async ({ content, senderId, channelId }) => {
   const enrichedMessage = {
     ...data,
     users: {
-      ...sender
-    }
+      ...sender,
+    },
+  };
+
+  return enrichedMessage;
+};
+
+export const updateMessage = async ({
+  messageId,
+  content,
+  attachments,
+  userId,
+}) => {
+  const { data } = await supabase
+    .from("messages")
+    .update({ content, attachments })
+    .eq("id", messageId)
+    .select()
+    .single();
+
+  const { data: sender, error: senderError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("clerk_id", userId)
+    .single();
+
+  if (senderError) return errorResponse(res, senderError.message);
+
+  const enrichedMessage = {
+    ...data,
+    users: {
+      ...sender,
+    },
   };
 
   return enrichedMessage;
@@ -38,31 +75,25 @@ export const getMessagesByChannel = async ({ channelId }) => {
 };
 
 export const deleteMessage = async ({ messageId, userId }) => {
-  // Check if the message exists and belongs to the user
   const { data: message, error: fetchError } = await supabase
     .from("messages")
-    .select("user_id")
+    .select("created_by")
     .eq("id", messageId)
+    .is("deleted_at", null)
     .single();
 
-  if (fetchError) {
-    throw new Error("Failed to fetch message data");
-  }
+  if (fetchError) throw new Error("Failed to fetch message data");
 
-  // If the message doesn't belong to the user, return an error
-  if (message.user_id !== userId) {
+  if (message.created_by !== userId) {
     throw new Error("You are not authorized to delete this message");
   }
 
-  // Proceed to delete the message
   const { error: deleteError } = await supabase
     .from("messages")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", messageId);
 
-  if (deleteError) {
-    throw new Error("Failed to delete message");
-  }
+  if (deleteError) throw new Error("Failed to soft delete message");
 
   return { success: true };
 };

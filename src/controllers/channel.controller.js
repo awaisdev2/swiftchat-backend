@@ -44,6 +44,18 @@ export const getChannelById = async (req, res) => {
   }
 };
 
+export const updateChannel = async (req, res) => {
+  try {
+    const { channelId } = req.params;
+    const { data, error } = await channelService.updateChannel({ channelId, payload: req.body });
+    if (error) return errorResponse(res, error.message);
+
+    return successResponse(res, data, "Channel updated");
+  } catch (err) {
+    return errorResponse(res, err.message);
+  }
+};
+
 export const deleteChannel = async (req, res) => {
   try {
     const { channelId } = req.params;
